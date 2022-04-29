@@ -1,4 +1,4 @@
-package GoProjectStiply1_0_0
+package main
 
 import (
 	"context"
@@ -11,12 +11,12 @@ import (
 
 func main() {
 	l := log.New(os.Stdout, "product-api", log.LstdFlags)
-	hh := handlers.NewHello(l)
-	gh := handlers.NewGoodbye(l)
+
+	// create the handlers
+	ph := handlers.NewProducts(l)
 
 	sm := http.NewServeMux()
-	sm.Handle("/", hh)
-	sm.Handle("/goodbye", gh)
+	sm.Handle("/", ph)
 
 	s := &http.Server{
 		Addr:         ":9090",
@@ -25,6 +25,7 @@ func main() {
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
 	}
+	// wrapping ListenAndServe in gofunc so it's not going to block
 	go func() {
 		err := s.ListenAndServe()
 		if err != nil {
@@ -32,12 +33,16 @@ func main() {
 		}
 	}()
 
+	// make a new channel to notify on os interrupt of server (ctrl + C)
 	sigChan := make(chan os.Signal)
 	signal.Notify(sigChan, os.Interrupt)
 	signal.Notify(sigChan, os.Kill)
 
+	// This blocks the code until the channel receives some message
 	sig := <-sigChan
 	l.Println("Received terminate, graceful shutdown", sig)
+	// Once message is consumed shut everything down
+	// Gracefully shuts down all client requests. Makes server more reliable
 	tc, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	s.Shutdown(tc)
