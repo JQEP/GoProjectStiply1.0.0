@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-
-	"github.com/nandangrover/go-microservices/data"
 )
 
 //Products structure that holds a logger
